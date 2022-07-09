@@ -42,6 +42,8 @@ public class Client : MonoBehaviour
     [SerializeField]
     private Button connectionButton;
     [SerializeField]
+    private Button startButton;
+    [SerializeField]
     private EventSystem ev;
     [SerializeField]
     private int chatLength = 20;
@@ -59,50 +61,6 @@ public class Client : MonoBehaviour
         ipInput.text = "127.0.0.1";
         portInput.text = "8888";
     }
-
-    public void ConnectToServer()
-    {
-        if (isConnectedFlag)
-        {
-            return;
-        }
-
-        //UI Adjustments
-        userListPanel.SetActive(true);
-        connectionButton.GetComponentInChildren<TMP_Text>().text = "Disconnect";
-        connectionButton.onClick.RemoveAllListeners();
-        connectionButton.onClick.AddListener(DisconnectedFromServer);
-
-        //Get Server Info
-        username = "Guest";
-        if (!string.IsNullOrEmpty(userNameInput.text))
-            username = userNameInput.text;
-        ip = "127.0.0.1";
-        if (!string.IsNullOrEmpty(ipInput.text))
-            ip = ipInput.text;
-        port = Int32.Parse(portInput.text);
-        if (port <= 0)
-            port = 8888;
-
-        try
-        {
-            client = new TcpClient(ip, port);
-
-            networkStream = client.GetStream();
-            writer = new StreamWriter(networkStream);
-            reader = new StreamReader(networkStream);
-
-            chatText.text = "";
-            Debug.Log($"CLIENT INFO: Connected to server on port {port}");
-
-            isConnectedFlag = true;
-        }
-        catch (Exception ex)
-        {
-            Debug.LogError($"CLIENT ERROR: Couldn't connect to server. Error info: {ex.Message}");
-        }
-    }
-
     private void Update()
     {
         if (isConnectedFlag)
@@ -119,6 +77,58 @@ public class Client : MonoBehaviour
                 OnSendMessage();
         }
     }
+    public void ConnectToServer()
+    {
+        if (isConnectedFlag)
+        {
+            return;
+        }
+
+        //Get Server Info
+        username = "Guest";
+        if (!string.IsNullOrEmpty(userNameInput.text))
+            username = userNameInput.text;
+        ip = "127.0.0.1";
+        if (!string.IsNullOrEmpty(ipInput.text))
+            ip = ipInput.text;
+
+        if(!Int32.TryParse(portInput.text, out int port))
+        {
+            chatText.text += $"(ERROR) Client: {portInput.text} is not a valid input!\n";
+            return;
+        }
+        port = Int32.Parse(portInput.text);
+        if (port <= 0)
+            port = 8888;
+
+        try
+        {
+            client = new TcpClient(ip, port);
+
+            networkStream = client.GetStream();
+            writer = new StreamWriter(networkStream);
+            reader = new StreamReader(networkStream);
+
+            chatText.text = "";
+            Debug.Log($"CLIENT INFO: Connected to server on port {port}");
+
+            //UI Adjustments
+            userListPanel.SetActive(true);
+            connectionButton.GetComponentInChildren<TMP_Text>().text = "Disconnect";
+            connectionButton.onClick.RemoveAllListeners();
+            connectionButton.onClick.AddListener(DisconnectedFromServer);
+            startButton.interactable = false;
+
+            isConnectedFlag = true;
+        }
+        catch (Exception ex)
+        {
+            Debug.LogError($"CLIENT ERROR: Couldn't connect to server. Error info: {ex.Message}");
+            chatText.text += $"(ERROR) Client: {ex.Message}\n";
+        }
+    }
+
+    
     private void OnInComingData(string _data)
     {
         if (_data == "%NAME")
@@ -199,6 +209,7 @@ public class Client : MonoBehaviour
         connectionButton.onClick.RemoveAllListeners();
         connectionButton.onClick.AddListener(ConnectToServer);
         userListPanel.SetActive(false);
+        startButton.interactable = true;
 
         return;
     }

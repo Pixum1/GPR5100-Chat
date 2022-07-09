@@ -36,6 +36,8 @@ public class Server : MonoBehaviour
             ip = "127.0.0.1";
             if (!string.IsNullOrEmpty(ipInput.text))
                 ip = ipInput.text;
+
+            if (!Int32.TryParse(portInput.text, out port)) return;
             port = Int32.Parse(portInput.text);
             if (port <= 0)
                 port = 8888;
